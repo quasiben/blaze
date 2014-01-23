@@ -287,6 +287,8 @@ class CKernelTransformer(object):
             new_op = Op('ckernel', op.type, [ckernel_deferred, args], op.result)
             new_op.add_metadata({'rank': 0,
                                  'parallel': True})
+            new_op.add_metadata(op.metadata)
+
             return new_op
 
 

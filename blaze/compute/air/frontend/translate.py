@@ -5,8 +5,9 @@ Translate blaze expressoin graphs into blaze AIR.
 """
 
 from __future__ import absolute_import, division, print_function
+import string
 
-import threading
+from datashape import DataShape, Fixed, TypeVar
 
 from pykit import types
 from pykit.ir import Function, Builder, Value, Op, Const
@@ -79,7 +80,7 @@ def _from_expr(expr, f, builder, values):
         # -------------------------------------------------
         # Construct Op
 
-        result = Op("kernel", expr.dshape, args)
+        result = Op("kernel", erase_shape(expr.dshape), args)
 
         # Copy metadata verbatim
         assert 'kernel' in expr.metadata
@@ -94,6 +95,22 @@ def _from_expr(expr, f, builder, values):
     values[expr] = result
     return result
 
+
+def erase_shape(dshape):
+    """
+    Erase concrete shape information from the datashape. This is useful
+    for compilation caching, which is important to reduce compile times
+    and meaningfully support immediate evaluation.
+    """
+    shape = dshape.shape
+    new_shape = []
+    for dim, symbol in zip(shape, string.ascii_letters):
+        if isinstance(dim, Fixed):
+            dim = TypeVar(symbol)
+        new_shape.append(dim)
+
+    params = new_shape + [dshape.measure]
+    return DataShape(*params)
 
 #------------------------------------------------------------------------
 # Utils

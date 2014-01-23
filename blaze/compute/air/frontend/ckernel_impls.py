@@ -44,5 +44,7 @@ class CKernelImplementations(object):
             new_op = Op('ckernel', op.type, [impl, op.args[1:]], op.result)
             new_op.add_metadata({'rank': 0,
                                  'parallel': True})
+            new_op.add_metadata(op.metadata)
+
             return new_op
         return op

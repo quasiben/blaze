@@ -124,9 +124,44 @@ class CKernelInterp(object):
         self.values = values # { Op : py_val }
 
     def op_alloc(self, op):
-        dshape = op.type
+        ## -- Determine output dshape -- ##
+        function = op.metadata['kernel']
+
+        args = [self.values[arg] for arg in op.args[1]]
+        dshapes = [arg.dshape for arg in args]
+
+        #if function.matches('ckernel', dshapes):
+        overload = function.best_match('ckernel', dshapes)
+        dshape = overload.resolved_sig
+        #    raise TypeError(
+        #        "Cannot resolve overload %s with input types %s!" % (
+        #            func, dshapes))
+
+        # Allocate output
         storage = op.metadata.get('storage') # TODO: storage!
         self.values[op] = blaze.empty(dshape, storage=storage)
+
+    def op_kernel(self, op):
+        function = op.metadata['kernel']
+        overload = op.metadata['overload']
+
+        func = overload.func
+        polysig = overload.sig
+        monosig = overload.resolved_sig
+        argtypes = monosig.argtypes
+
+        if function.matches('ckernel', argtypes):
+            overload = function.best_match('ckernel', argtypes)
+            impl = overload.func
+            assert monosig == overload.resolved_sig, (monosig,
+                                                      overload.resolved_sig)
+
+            new_op = Op('ckernel', op.type, [impl, op.args[1:]], op.result)
+            new_op.add_metadata({'rank': 0,
+                                 'parallel': True})
+            return new_op
+        return op
+
 
     def op_dealloc(self, op):
         alloc, = op.args

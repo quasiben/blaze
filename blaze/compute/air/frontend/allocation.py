@@ -10,6 +10,15 @@ from pykit.ir import interp, visit, transform, Op, Builder, ops
 from pykit import types
 
 def insert_allocations(func, env):
+    """
+    Insert temporary allocations and deallocations into the IR.
+
+    Each allocation holds a reference to the arguments of the ckernel,
+    in order to determine the size of output to allocate. Kernels with
+    'dont_allocate' set will not receive allocations.
+
+    TODO: Implement dont_allocate keyword argument for blaze functions
+    """
     b = Builder(func)
 
     # IR positions and list of ops
@@ -17,11 +26,11 @@ def insert_allocations(func, env):
     oplist = list(func.ops)
 
     for op in func.ops:
+        # TODO: This should not depend on ckernel, this should run earlier
         if op.opcode == 'ckernel':
             ckernel, args = op.args
-            alloc   = Op('alloc', op.type, args=[])
-
-            # TODO: Insert alloc in args list of ckernel
+            alloc   = Op('alloc', op.type, args=op.args)
+            alloc.add_metadata(op.metadata)
 
             # Replace uses of ckernel with temporary allocation
             op.replace_uses(alloc)
