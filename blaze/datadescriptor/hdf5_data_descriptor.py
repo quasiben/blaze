@@ -28,11 +28,12 @@ class HDF5_DDesc(DDesc):
     A Blaze data descriptor which exposes a HDF5 dataset.
     """
 
-    def __init__(self, path, datapath, mode='r', filters=None):
+    def __init__(self, path, datapath, mode='r', filters=None, allow_copy=False):
         self.path = path
         self.datapath = datapath
         self.mode = mode
         self.filters = filters
+        self.allow_copy = allow_copy
 
     @property
     def dshape(self):

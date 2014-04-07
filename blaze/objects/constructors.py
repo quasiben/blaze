@@ -130,7 +130,7 @@ def array(obj, dshape=None, ddesc=None):
                 obj, rootdir=ddesc.path, mode=ddesc.mode, **ddesc.kwargs)
     elif isinstance(ddesc, HDF5_DDesc):
         if isinstance(obj, nd.array):
-            obj = nd.as_numpy(obj)
+            obj = nd.as_numpy(obj,allow_copy=ddesc.allow_copy)
         with tb.open_file(ddesc.path, mode=ddesc.mode) as f:
             where, name = split_path(ddesc.datapath)
             f.create_earray(where, name, filters=ddesc.filters, obj=obj)
